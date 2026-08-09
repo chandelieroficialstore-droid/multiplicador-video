@@ -7,6 +7,17 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+process.on('uncaughtException', (err) => {
+  console.error('[CRASH] uncaughtException:', err && err.stack ? err.stack : err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[CRASH] unhandledRejection:', err && err.stack ? err.stack : err);
+});
+setInterval(() => {
+  const m = process.memoryUsage();
+  console.log(`[MEM] rss=${(m.rss/1024/1024).toFixed(0)}MB heapUsed=${(m.heapUsed/1024/1024).toFixed(0)}MB`);
+}, 15000);
+
 const app = express();
 const upload = multer({
   dest: os.tmpdir(),
@@ -67,6 +78,7 @@ app.post('/api/generate', upload.fields([
   { name: 'corpo', maxCount: 1 },
   { name: 'cta', maxCount: 1 }
 ]), async (req, res) => {
+  console.log('[REQ] recebido /api/generate');
   const gancho = req.files?.gancho?.[0]?.path;
   const corpo  = req.files?.corpo?.[0]?.path;
   const cta    = req.files?.cta?.[0]?.path;
@@ -76,6 +88,8 @@ app.post('/api/generate', upload.fields([
     if(!gancho || !corpo || !cta){
       return res.status(400).json({ error: 'Faltam arquivos: envie gancho, corpo e cta.' });
     }
+    console.log('[REQ] arquivos recebidos, tamanhos:',
+      req.files.gancho[0].size, req.files.corpo[0].size, req.files.cta[0].size);
 
     const quality = QUALITY[req.body.quality] || QUALITY.padrao;
     const [W, H] = (req.body.resolution || '540x960').split('x').map(Number);
@@ -90,9 +104,11 @@ app.post('/api/generate', upload.fields([
     const TRANS = 0.4;
     let canX = false, durG = null, durC = null;
     if(transitions){
+      console.log('[REQ] medindo duração dos clipes...');
       durG = await probeDuration(gancho);
       durC = await probeDuration(corpo);
       canX = durG && durC && durG > TRANS*2 && durC > TRANS*2;
+      console.log('[REQ] duração gancho=', durG, 'corpo=', durC, 'crossfade=', canX);
     }
 
     const norm = i => `scale=${W}:${H}:force_original_aspect_ratio=increase:flags=lanczos,crop=${W}:${H},fps=30,setsar=1[v${i}]`;
@@ -122,6 +138,7 @@ app.post('/api/generate', upload.fields([
 
     outPath = path.join(os.tmpdir(), `out_${Date.now()}_${Math.random().toString(36).slice(2)}.mp4`);
 
+    console.log('[REQ] iniciando ffmpeg...');
     await runFFmpeg([
       '-y',
       '-i', gancho, '-i', corpo, '-i', cta,
@@ -132,6 +149,7 @@ app.post('/api/generate', upload.fields([
       '-movflags', '+faststart',
       outPath
     ]);
+    console.log('[REQ] ffmpeg concluído, enviando resposta...');
 
     res.setHeader('Content-Type', 'video/mp4');
     const stream = fs.createReadStream(outPath);
@@ -139,6 +157,7 @@ app.post('/api/generate', upload.fields([
     stream.on('close', () => cleanup([gancho, corpo, cta, outPath]));
     stream.on('error', () => cleanup([gancho, corpo, cta, outPath]));
   }catch(err){
+    console.error('[REQ] erro tratado:', err && err.stack ? err.stack : err);
     cleanup([gancho, corpo, cta, outPath]);
     res.status(500).json({ error: err.message || String(err) });
   }
