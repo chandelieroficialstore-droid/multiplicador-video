@@ -112,13 +112,11 @@ app.post('/api/generate', upload.fields([
     for(const [label, src] of [['g', gancho], ['c', corpo], ['t', cta]]){
       const dst = path.join(os.tmpdir(), `norm_${label}_${Date.now()}_${Math.random().toString(36).slice(2)}.mp4`);
       await runFFmpeg([
-        '-y', '-threads', '1',
+        '-y', '-threads', '0',
         '-i', src,
         '-vf', `scale=${W}:${H}:force_original_aspect_ratio=increase${scaleFlags},crop=${W}:${H},fps=30,setsar=1`,
         '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
-        '-x264-params', 'rc-lookahead=10:ref=1',
         '-c:a', 'aac', '-ar', '44100', '-ac', '2',
-        '-threads', '1',
         dst
       ]);
       normPaths.push(dst);
@@ -165,14 +163,12 @@ app.post('/api/generate', upload.fields([
 
     console.log('[REQ] iniciando ffmpeg (combinação final)...');
     await runFFmpeg([
-      '-y', '-threads', '1',
+      '-y', '-threads', '0',
       '-i', ng, '-i', nc, '-i', nt,
       '-filter_complex', filter,
       '-map', '[vout]', '-map', '[aout]',
       '-c:v', 'libx264', '-preset', quality.preset, '-crf', String(quality.crf), '-profile:v', 'high', '-pix_fmt', 'yuv420p',
-      '-x264-params', 'rc-lookahead=10',
       '-c:a', 'aac', '-b:a', '160k',
-      '-threads', '1',
       '-movflags', '+faststart',
       outPath
     ]);

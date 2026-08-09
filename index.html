@@ -58,7 +58,7 @@
   <p class="sub">gancho × corpo × cta — processado num servidor de verdade (ffmpeg nativo, rápido).</p>
 
   <div class="box" id="server-status">Verificando o servidor...</div>
-  <div class="box">O plano grátis do servidor tem só 512MB de memória. Resolução <b>Baixa</b> sempre cabe; resoluções maiores podem falhar com erro 502, dependendo do tamanho dos vídeos.</div>
+  <div class="box">Configurado para qualidade máxima — exige o <b>plano pago do Render</b> (mais memória) para funcionar de forma confiável. No plano grátis (512MB), use resolução Baixa.</div>
 
   <div class="slot" id="slot-gancho">
     <div class="slot-head">
@@ -100,17 +100,17 @@
     <label for="qualidade">Qualidade</label>
     <select id="qualidade">
       <option value="rapido">Rápida</option>
-      <option value="padrao" selected>Padrão (recomendado)</option>
-      <option value="alta">Alta</option>
+      <option value="padrao">Padrão</option>
+      <option value="alta" selected>Alta (recomendado)</option>
     </select>
   </div>
 
   <div class="config">
     <label for="resolucao">Resolução</label>
     <select id="resolucao">
-      <option value="360x640" selected>Baixa 360×640 (recomendado — sempre funciona no plano grátis)</option>
-      <option value="540x960">Média 540×960 (⚠️ pode falhar por falta de memória)</option>
-      <option value="720x1280">Alta 720×1280 (⚠️ falha quase sempre no plano grátis)</option>
+      <option value="360x640">Baixa 360×640</option>
+      <option value="540x960">Média 540×960</option>
+      <option value="720x1280" selected>Alta 720×1280 (recomendado — requer plano pago)</option>
     </select>
   </div>
 
