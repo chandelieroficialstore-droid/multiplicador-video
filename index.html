@@ -1,1 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Multiplicador — gancho × corpo × CTA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#0b0b12; --surface:#15151f; --surface-2:#1c1c29; --line:#2a2a3a;
+    --text:#eceef2; --muted:#9a9aab; --accent:#ff4d6d; --accent-b:#ffb020; --good:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:20px 16px 60px;max-width:720px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px;}
+  .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:13.5px;line-height:1.5;}
+  .slot{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;}
+  .slot-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .slot-title{font-weight:700;display:flex;align-items:center;gap:8px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.gancho{background:var(--accent);} .dot.corpo{background:var(--accent-b);} .dot.cta{background:var(--good);}
+  .count{background:var(--surface-2);border-radius:20px;padding:3px 10px;font-size:12.5px;color:var(--muted);}
+  .addbtn{width:100%;border:1.5px dashed var(--line);background:transparent;color:var(--muted);
+    border-radius:10px;padding:12px;font-size:14px;margin-bottom:8px;}
+  .item{display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);
+    border-radius:10px;padding:8px 14px 8px 8px;margin-bottom:8px;font-size:14px;gap:10px;}
+  .item .item-left{display:flex;align-items:center;gap:10px;overflow:hidden;}
+  .item video{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#000;flex-shrink:0;}
+  .item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .item button{background:none;border:none;color:var(--muted);font-size:18px;flex-shrink:0;}
+  .config{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .config label{font-size:14px;color:var(--muted);min-width:110px;}
+  .config input,.config select{background:var(--surface-2);border:1px solid var(--line);
+    color:var(--text);border-radius:8px;padding:8px 10px;font-size:13.5px;}
+  .combos-out{margin-left:auto;font-family:ui-monospace,monospace;font-size:13px;color:var(--accent-b);}
+  .go{width:100%;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:700;
+    background:linear-gradient(90deg,var(--accent),var(--accent-b));color:#1a1005;margin-bottom:14px;}
+  .go:disabled{opacity:.5;}
+  #status{color:var(--muted);font-size:13.5px;margin-bottom:10px;white-space:pre-wrap;}
+  .progress-wrap{background:var(--surface-2);border-radius:20px;height:10px;overflow:hidden;margin-bottom:14px;}
+  .progress-bar{background:linear-gradient(90deg,var(--accent),var(--accent-b));height:100%;width:0%;transition:width .3s;}
+  .result{display:flex;align-items:center;gap:10px;background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;padding:8px 14px 8px 8px;margin-bottom:8px;font-size:14px;}
+  .result video{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#000;flex-shrink:0;}
+  .result .result-info{flex:1;overflow:hidden;}
+  .result .result-info div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .result small{color:var(--muted);}
+  .result a{color:var(--accent-b);text-decoration:none;font-weight:600;flex-shrink:0;}
+  #zipbtn{display:none;width:100%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);
+    border-radius:10px;padding:12px;font-size:14px;margin-top:6px;}
+</style>
+</head>
+<body>
 
+  <h1>Multiplicador de vídeos</h1>
+  <p class="sub">gancho × corpo × cta — processado num servidor de verdade (ffmpeg nativo, rápido).</p>
+
+  <div class="box" id="server-status">Verificando o servidor...</div>
+  <div class="box">O plano grátis do servidor tem só 512MB de memória. Resolução <b>Baixa</b> sempre cabe; resoluções maiores podem falhar com erro 502, dependendo do tamanho dos vídeos.</div>
+
+  <div class="slot" id="slot-gancho">
+    <div class="slot-head">
+      <div class="slot-title"><span class="dot gancho"></span>Ganchos</div>
+      <span class="count" id="count-gancho">0 vídeos</span>
+    </div>
+    <button class="addbtn" onclick="document.getElementById('file-gancho').click()">+ Adicionar vídeos de gancho</button>
+    <input type="file" id="file-gancho" accept="video/*" multiple style="display:none">
+    <div id="list-gancho"></div>
+  </div>
+
+  <div class="slot" id="slot-corpo">
+    <div class="slot-head">
+      <div class="slot-title"><span class="dot corpo"></span>Corpos</div>
+      <span class="count" id="count-corpo">0 vídeos</span>
+    </div>
+    <button class="addbtn" onclick="document.getElementById('file-corpo').click()">+ Adicionar vídeos de corpo</button>
+    <input type="file" id="file-corpo" accept="video/*" multiple style="display:none">
+    <div id="list-corpo"></div>
+  </div>
+
+  <div class="slot" id="slot-cta">
+    <div class="slot-head">
+      <div class="slot-title"><span class="dot cta"></span>CTAs</div>
+      <span class="count" id="count-cta">0 vídeos</span>
+    </div>
+    <button class="addbtn" onclick="document.getElementById('file-cta').click()">+ Adicionar vídeos de CTA</button>
+    <input type="file" id="file-cta" accept="video/*" multiple style="display:none">
+    <div id="list-cta"></div>
+  </div>
+
+  <div class="config">
+    <label for="maxcombos">Limite de vídeos</label>
+    <input type="number" id="maxcombos" value="9" min="1">
+    <div class="combos-out" id="combos-out">de 0 possíveis</div>
+  </div>
+
+  <div class="config">
+    <label for="qualidade">Qualidade</label>
+    <select id="qualidade">
+      <option value="rapido">Rápida</option>
+      <option value="padrao" selected>Padrão (recomendado)</option>
+      <option value="alta">Alta</option>
+    </select>
+  </div>
+
+  <div class="config">
+    <label for="resolucao">Resolução</label>
+    <select id="resolucao">
+      <option value="360x640" selected>Baixa 360×640 (recomendado — sempre funciona no plano grátis)</option>
+      <option value="540x960">Média 540×960 (⚠️ pode falhar por falta de memória)</option>
+      <option value="720x1280">Alta 720×1280 (⚠️ falha quase sempre no plano grátis)</option>
+    </select>
+  </div>
+
+  <div class="config">
+    <label for="transicao">Transição</label>
+    <select id="transicao">
+      <option value="on" selected>Crossfade rápido (0,4s)</option>
+      <option value="off">Corte seco</option>
+    </select>
+  </div>
+
+  <div class="config">
+    <label for="paralelo">Ao mesmo tempo</label>
+    <select id="paralelo">
+      <option value="1">1 por vez (mais leve)</option>
+      <option value="2" selected>2 ao mesmo tempo (recomendado)</option>
+      <option value="3">3 ao mesmo tempo (mais rápido)</option>
+    </select>
+  </div>
+
+  <button class="go" id="gobtn" disabled>Adicione ao menos 1 vídeo em cada categoria</button>
+
+  <div id="status"></div>
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+  <div id="results"></div>
+  <button id="zipbtn">Baixar tudo (.zip)</button>
+
+<script>
+const state = { gancho: [], corpo: [], cta: [] };
+const generated = [];
+
+(async function checkServer(){
+  const el = document.getElementById('server-status');
+  const t0 = performance.now();
+  try{
+    await fetch('/api/health');
+    const secs = ((performance.now()-t0)/1000).toFixed(1);
+    el.textContent = secs > 3
+      ? `✅ Servidor pronto (demorou ${secs}s pra acordar — normal após um tempo parado).`
+      : '✅ Servidor pronto.';
+  }catch(e){
+    el.textContent = '⚠️ Não consegui checar o servidor. Tente gerar mesmo assim.';
+  }
+})();
+
+['gancho','corpo','cta'].forEach(cat => {
+  document.getElementById('file-'+cat).addEventListener('change', (e) => {
+    for(const f of e.target.files) state[cat].push(f);
+    e.target.value = '';
+    refreshUI();
+  });
+});
+
+function makeThumb(file){
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'metadata';
+  v.src = URL.createObjectURL(file);
+  v.addEventListener('loadedmetadata', () => { v.currentTime = Math.min(0.1, v.duration/2 || 0); }, { once: true });
+  return v;
+}
+
+function refreshUI(){
+  ['gancho','corpo','cta'].forEach(cat => {
+    document.getElementById('count-'+cat).textContent = state[cat].length + (state[cat].length===1 ? ' vídeo' : ' vídeos');
+    const list = document.getElementById('list-'+cat);
+    list.innerHTML = '';
+    state[cat].forEach((f, i) => {
+      const row = document.createElement('div');
+      row.className = 'item';
+      const left = document.createElement('div');
+      left.className = 'item-left';
+      left.appendChild(makeThumb(f));
+      const label = document.createElement('span');
+      label.textContent = f.name;
+      left.appendChild(label);
+      row.appendChild(left);
+      const btn = document.createElement('button');
+      btn.setAttribute('aria-label','remover');
+      btn.textContent = '✕';
+      btn.onclick = () => { state[cat].splice(i,1); refreshUI(); };
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  });
+
+  const total = state.gancho.length * state.corpo.length * state.cta.length;
+  document.getElementById('combos-out').textContent = `de ${total} possíveis`;
+  const maxInput = document.getElementById('maxcombos');
+  if(total > 0) maxInput.max = total;
+
+  const btn = document.getElementById('gobtn');
+  if(total === 0){
+    btn.disabled = true;
+    btn.textContent = 'Adicione ao menos 1 vídeo em cada categoria';
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Gerar vídeos';
+  }
+}
+
+document.getElementById('maxcombos').addEventListener('input', refreshUI);
+
+function shuffleCombos(list, max){
+  for(let i=list.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [list[i],list[j]] = [list[j],list[i]];
+  }
+  return list.slice(0, max);
+}
+
+function setStatus(msg){
+  document.getElementById('status').textContent = msg;
+}
+
+async function gerarCombo(gancho, corpo, cta, index){
+  const fd = new FormData();
+  fd.append('gancho', gancho);
+  fd.append('corpo', corpo);
+  fd.append('cta', cta);
+  fd.append('quality', document.getElementById('qualidade').value);
+  fd.append('resolution', document.getElementById('resolucao').value);
+  fd.append('transitions', document.getElementById('transicao').value);
+  fd.append('seed', String(index * 7919 + 13));
+
+  const resp = await fetch('/api/generate', { method: 'POST', body: fd });
+  if(!resp.ok){
+    let msg = 'Erro ' + resp.status;
+    try{ const j = await resp.json(); if(j.error) msg = j.error; }catch(e){}
+    throw new Error(msg);
+  }
+  return await resp.blob();
+}
+
+function setProgress(done, total){
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function addResultRow(name, blob, secs){
+  const url = URL.createObjectURL(blob);
+  const row = document.createElement('div');
+  row.className = 'result';
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = url;
+  v.addEventListener('loadedmetadata', () => { v.currentTime = Math.min(0.1, v.duration/2 || 0); }, { once: true });
+  row.appendChild(v);
+  const info = document.createElement('div');
+  info.className = 'result-info';
+  info.innerHTML = `<div>${name}</div><small>${secs}s</small>`;
+  row.appendChild(info);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.textContent = 'Baixar';
+  row.appendChild(a);
+  document.getElementById('results').appendChild(row);
+}
+
+async function runWithConcurrency(items, limit, worker){
+  let idx = 0, done = 0;
+  async function next(){
+    while(idx < items.length){
+      const current = idx++;
+      await worker(items[current], current);
+      done++;
+      setProgress(done, items.length);
+    }
+  }
+  const workers = Array.from({length: Math.min(limit, items.length)}, next);
+  await Promise.all(workers);
+}
+
+document.getElementById('gobtn').addEventListener('click', async () => {
+  const btn = document.getElementById('gobtn');
+  btn.disabled = true;
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('zipbtn').style.display = 'none';
+  setProgress(0, 1);
+  generated.length = 0;
+
+  let combos = [];
+  state.gancho.forEach(g => state.corpo.forEach(c => state.cta.forEach(t => combos.push([g,c,t]))));
+  const max = parseInt(document.getElementById('maxcombos').value, 10) || combos.length;
+  combos = shuffleCombos(combos, max);
+  const limit = parseInt(document.getElementById('paralelo').value, 10) || 1;
+
+  const errors = [];
+  let finished = 0;
+  setStatus(`Gerando ${combos.length} vídeo(s), ${limit} ao mesmo tempo...`);
+
+  await runWithConcurrency(combos, limit, async (combo, i) => {
+    const t0 = performance.now();
+    try{
+      const blob = await gerarCombo(combo[0], combo[1], combo[2], i);
+      const secs = ((performance.now()-t0)/1000).toFixed(1);
+      const name = `video_${String(i+1).padStart(2,'0')}.mp4`;
+      generated.push({ name, blob });
+      addResultRow(name, blob, secs);
+    }catch(err){
+      const msg = err && err.message ? err.message : String(err);
+      errors.push(`Vídeo ${i+1}: ${msg}`);
+    }finally{
+      finished++;
+      setStatus(`Processando... ${finished} de ${combos.length} concluídos.`);
+    }
+  });
+
+  if(generated.length === 0 && errors.length){
+    setStatus(`Nenhum vídeo foi gerado. Primeiro erro: ${errors[0]}`);
+  } else {
+    setStatus(`Pronto! ${generated.length} de ${combos.length} vídeos gerados.` + (errors.length ? ` (${errors.length} falharam — primeiro erro: ${errors[0]})` : ''));
+  }
+  if(generated.length > 1) document.getElementById('zipbtn').style.display = 'block';
+  btn.disabled = false;
+});
+
+document.getElementById('zipbtn').addEventListener('click', async () => {
+  const zip = new JSZip();
+  generated.forEach(g => zip.file(g.name, g.blob));
+  const blob = await zip.generateAsync({type:'blob'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'videos.zip';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+refreshUI();
+</script>
+</body>
+</html>
